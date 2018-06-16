@@ -24,61 +24,52 @@ public final class ChatClient {
     private ChatClient() { }
 
     public static void main(String[] args) throws Exception {
+        String author = args.length == 0 ? "Random_Stranger" : args[0];
+
         // Connect to the sever
         ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", PORT).usePlaintext().build();
         RxChatGrpc.RxChatStub stub = RxChatGrpc.newRxStub(channel);
 
         CountDownLatch done = new CountDownLatch(1);
         ConsoleReader console = new ConsoleReader();
-
-        // Prompt the user for their name
-        console.println("Press ctrl+D to quit");
-        String author = console.readLine("Who are you? > ");
-        toMessage(author, author + " joined.").compose(stub::postMessage).subscribe();
+        console.println("Type /quit to exit");
 
         // Subscribe to incoming messages
-        Disposable chatSubscription = Single.just(Empty.getDefaultInstance()).as(stub::getMessages).subscribe(
-            message -> {
-                // Don't re-print our own messages
-                if (!message.getAuthor().equals(author)) {
-                    printLine(console, message.getAuthor(), message.getMessage());
-                }
-            },
-            throwable -> {
-                printLine(console, "ERROR", throwable.getMessage());
-                done.countDown();
-            },
-            done::countDown
-        );
+        Disposable chatSubscription = Single.just(Empty.getDefaultInstance())
+                .as(stub::getMessages)
+                .filter(message -> !message.getAuthor().equals(author))
+                .subscribe(message -> printLine(console, message.getAuthor(), message.getMessage()));
 
         // Publish outgoing messages
-        Observable.fromIterable(new ConsoleIterator(console, author + " > "))
-            .map(msg -> toMessage(author, msg))
-            .flatMapSingle(stub::postMessage)
-            .subscribe(
-                empty -> { },
-                throwable -> {
-                    printLine(console, "ERROR", throwable.getMessage());
-                    done.countDown();
-                },
-                done::countDown
-            );
+        Observable
+                // Send connection message
+                .just(author + " joined.")
+                // Send user input
+                .concatWith(Observable.fromIterable(new ConsoleIterator(console, author + " > ")))
+                // Send disconnect message
+                .concatWith(Single.just(author + " left."))
+                .map(msg -> toMessage(author, msg))
+                .flatMapSingle(stub::postMessage)
+                .subscribe(
+                    ChatClient::doNothing,
+                    throwable -> printLine(console, "ERROR", throwable.getMessage()),
+                    done::countDown
+                );
 
         // Wait for a signal to exit, then clean up
         done.await();
-        toMessage(author, author + " left.").compose(stub::postMessage).subscribe();
         chatSubscription.dispose();
         channel.shutdown();
         channel.awaitTermination(1, TimeUnit.SECONDS);
         console.getTerminal().restore();
     }
 
-    private static Single<ChatProto.ChatMessage> toMessage(String author, String message) {
-        return Single.just(
-            ChatProto.ChatMessage.newBuilder()
+    private static ChatProto.ChatMessage toMessage(String author, String message) {
+            return ChatProto.ChatMessage.newBuilder()
                 .setAuthor(author)
                 .setMessage(message)
-                .build()
-        );
+                .build();
     }
+
+    private static  <T> void doNothing(T ignore) {}
 }

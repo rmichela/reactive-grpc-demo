@@ -29,7 +29,7 @@ public class ConsoleIterator implements Iterable<String>, Iterator<String> {
     public boolean hasNext() {
         try {
             lastLine = console.readLine(prompt);
-            return lastLine != null;
+            return !lastLine.equals("/quit");
         } catch (IOException e) {
             return false;
         }
