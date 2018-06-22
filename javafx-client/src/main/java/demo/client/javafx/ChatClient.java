@@ -8,6 +8,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.rxjavafx.observables.JavaFxObservable;
+import io.reactivex.rxjavafx.sources.WindowEventSource;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -18,6 +19,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +46,6 @@ public class ChatClient extends Application {
         // Connect to the sever
         channel = ManagedChannelBuilder.forAddress("localhost", PORT).usePlaintext().build();
         stub = RxChatGrpc.newRxStub(channel);
-        stub.postMessage(toMessage("joined.")).subscribe();
     }
 
     @Override
@@ -58,6 +59,13 @@ public class ChatClient extends Application {
                 .map(this::fromMessage)
                 .subscribe(messages::appendText);
 
+        // Publish arrival message
+        WindowEventSource.fromWindowEvents(primaryStage, WindowEvent.WINDOW_SHOWING)
+                .map(x -> "joined.")
+                .map(this::toMessage)
+                .flatMapSingle(stub::postMessage)
+                .subscribe();
+
         // Publish outgoing messages
         JavaFxObservable.actionEventsOf(send)
                 .map(x -> message.getText())
@@ -65,13 +73,19 @@ public class ChatClient extends Application {
                 .flatMapSingle(stub::postMessage)
                 .subscribe(ignore -> message.clear());
 
+        // Publish departure message
+        WindowEventSource.fromWindowEvents(primaryStage, WindowEvent.WINDOW_HIDING)
+                .map(x -> "left.")
+                .map(this::toMessage)
+                .flatMapSingle(stub::postMessage)
+                .subscribe();
+
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     @Override
     public void stop() throws Exception {
-        stub.postMessage(toMessage("left.")).subscribe();
         chatSubscription.dispose();
         channel.shutdown();
         channel.awaitTermination(1, TimeUnit.SECONDS);
