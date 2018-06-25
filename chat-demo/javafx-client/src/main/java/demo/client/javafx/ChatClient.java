@@ -59,9 +59,11 @@ public class ChatClient extends Application {
                 .map(this::fromMessage)
                 .subscribe(messages::appendText);
 
-        // Publish arrival message
-        WindowEventSource.fromWindowEvents(primaryStage, WindowEvent.WINDOW_SHOWING)
-                .map(x -> "joined.")
+        // Publish arrival/departure message
+        WindowEventSource.fromWindowEvents(primaryStage, WindowEvent.ANY)
+                .filter(event -> event.getEventType().equals(WindowEvent.WINDOW_SHOWING) |
+                                 event.getEventType().equals(WindowEvent.WINDOW_HIDING))
+                .map(event -> event.getEventType().equals(WindowEvent.WINDOW_SHOWING) ? "joined" : "left")
                 .map(this::toMessage)
                 .flatMapSingle(stub::postMessage)
                 .subscribe();
@@ -72,13 +74,6 @@ public class ChatClient extends Application {
                 .map(this::toMessage)
                 .flatMapSingle(stub::postMessage)
                 .subscribe(ignore -> message.clear());
-
-        // Publish departure message
-        WindowEventSource.fromWindowEvents(primaryStage, WindowEvent.WINDOW_HIDING)
-                .map(x -> "left.")
-                .map(this::toMessage)
-                .flatMapSingle(stub::postMessage)
-                .subscribe();
 
         primaryStage.setScene(scene);
         primaryStage.show();
