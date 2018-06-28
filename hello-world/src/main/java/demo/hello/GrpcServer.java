@@ -14,7 +14,7 @@ public class GrpcServer extends GreeterGrpc.GreeterImplBase {
     }
 
     @Override
-    public void sayHello(HelloRequest request, StreamObserver<HelloResponse> responseObserver) {
+    public void greet(HelloRequest request, StreamObserver<HelloResponse> responseObserver) {
         String name = request.getName();
         responseObserver.onNext(HelloResponse.newBuilder().setMessage("Hello " + name).build());
         responseObserver.onCompleted();
@@ -27,5 +27,26 @@ public class GrpcServer extends GreeterGrpc.GreeterImplBase {
         responseObserver.onNext(HelloResponse.newBuilder().setMessage("Hola " + name).build());
         responseObserver.onNext(HelloResponse.newBuilder().setMessage("Bonjour " + name).build());
         responseObserver.onCompleted();
+    }
+
+    @Override
+    public StreamObserver<HelloRequest> streamGreet(StreamObserver<HelloResponse> responseObserver) {
+        return new StreamObserver<HelloRequest>() {
+            @Override
+            public void onNext(HelloRequest request) {
+                String name = request.getName();
+                responseObserver.onNext(HelloResponse.newBuilder().setMessage("Welcome " + name).build());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                responseObserver.onCompleted();
+            }
+
+            @Override
+            public void onCompleted() {
+                responseObserver.onCompleted();
+            }
+        };
     }
 }

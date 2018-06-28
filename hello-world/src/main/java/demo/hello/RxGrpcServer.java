@@ -10,26 +10,38 @@ import io.reactivex.Single;
 
 public class RxGrpcServer extends RxGreeterGrpc.GreeterImplBase {
     public static void main(String[] args) throws Exception {
-        Server server = ServerBuilder.forPort(8888).addService(new GrpcServer()).build().start();
+        Server server = ServerBuilder.forPort(8888).addService(new RxGrpcServer()).build().start();
         server.awaitTermination();
     }
 
     @Override
-    public Single<HelloResponse> sayHello(Single<HelloRequest> request) {
+    public Single<HelloResponse> greet(Single<HelloRequest> request) {
         return request
                 .map(HelloRequest::getName)
                 .map(name -> "Hello " + name)
-                .map(greeting -> HelloResponse.newBuilder().setMessage(greeting).build());
+                .map(this::toResponse);
     }
 
     @Override
     public Flowable<HelloResponse> multiGreet(Single<HelloRequest> request) {
         return request
+                .toFlowable()
                 .map(HelloRequest::getName)
-                .flatMapPublisher(name -> Flowable.just(
-                        "Welcome " + name,
-                        "Hola " + name,
-                        "Bonjour " + name))
-                .map(greeting -> HelloResponse.newBuilder().setMessage(greeting).build());
+                .flatMap(
+                        x -> Flowable.just("Welcome", "Hola", "Bonjour"),
+                        (name, salutation) -> salutation + " " + name)
+                .map(this::toResponse);
+    }
+
+    @Override
+    public Flowable<HelloResponse> streamGreet(Flowable<HelloRequest> request) {
+        return request
+                .map(HelloRequest::getName)
+                .map(name -> "Greetings " + name)
+                .map(this::toResponse);
+    }
+
+    private HelloResponse toResponse(String greeting) {
+        return HelloResponse.newBuilder().setMessage(greeting).build();
     }
 }

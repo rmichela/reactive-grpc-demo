@@ -7,8 +7,9 @@ option java_package = "demo.proto";
 option java_outer_classname = "HelloWorldProto";
 
 service Greeter {
-    rpc SayHello (HelloRequest) returns (HelloResponse) {}
+    rpc Greet (HelloRequest) returns (HelloResponse) {}
     rpc MultiGreet (HelloRequest) returns (stream HelloResponse) {}
+    rpc StreamGreet (stream HelloRequest) returns (stream HelloResponse) {}
 }
 
 message HelloRequest {

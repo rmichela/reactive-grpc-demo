@@ -14,7 +14,7 @@ public class GrpcClient {
         HelloRequest request = HelloRequest.newBuilder().setName("OSCON").build();
 
         // Blocking unary request
-        HelloResponse response = blockingStub.sayHello(request);
+        HelloResponse response = blockingStub.greet(request);
         System.out.println(response.getMessage());
 
         // Blocking streaming request

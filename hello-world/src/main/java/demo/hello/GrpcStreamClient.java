@@ -9,12 +9,10 @@ import io.grpc.stub.StreamObserver;
 
 import java.time.Duration;
 
-public class GrpcAsyncClient {
+public class GrpcStreamClient {
     public static void main(String[] args) throws Exception {
         ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 8888).usePlaintext().build();
         GreeterGrpc.GreeterStub stub = GreeterGrpc.newStub(channel);
-
-        HelloRequest request = HelloRequest.newBuilder().setName("OSCON").build();
 
         // Callbacks defined outside of service invocation :(
         StreamObserver<HelloResponse> responseObserver = new StreamObserver<HelloResponse>() {
@@ -30,9 +28,12 @@ public class GrpcAsyncClient {
             public void onCompleted() { }
         };
 
-        // Streaming unary and streaming services
-        stub.greet(request, responseObserver);
-        stub.multiGreet(request, responseObserver);
+        StreamObserver<HelloRequest> requestObserver = stub.streamGreet(responseObserver);
+
+        requestObserver.onNext(HelloRequest.newBuilder().setName("Alpha").build());
+        requestObserver.onNext(HelloRequest.newBuilder().setName("Beta").build());
+        requestObserver.onNext(HelloRequest.newBuilder().setName("Gamma").build());
+        requestObserver.onCompleted();
 
         Thread.sleep(Duration.ofSeconds(1).toMillis());
     }
