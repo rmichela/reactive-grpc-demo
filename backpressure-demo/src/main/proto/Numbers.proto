@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package demo.proto;
+
+option java_package = "numbers.proto";
+option java_outer_classname = "NumbersProto";
+
+import "google/protobuf/empty.proto";
+
+service Chat {
+    rpc SendNumbers (stream Number) returns (google.protobuf.Empty) {}
+}
+
+message Number {
+    int64 number = 1;
+}
