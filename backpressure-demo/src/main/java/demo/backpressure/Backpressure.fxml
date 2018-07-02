@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
@@ -14,17 +13,17 @@
    <children>
       <BorderPane prefHeight="407.0" prefWidth="611.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <top>
-            <LineChart id="LineChart" fx:id="lineChart" BorderPane.alignment="CENTER">
+            <LineChart id="LineChart" fx:id="lineChart" animated="false" createSymbols="false" BorderPane.alignment="CENTER">
               <xAxis>
-                <CategoryAxis label="Time" side="BOTTOM" />
+                <NumberAxis fx:id="timeDimension" animated="false" forceZeroInRange="false" label="Time" minorTickVisible="false" side="BOTTOM" tickLabelsVisible="false" />
               </xAxis>
               <yAxis>
-                <NumberAxis side="LEFT" />
+                <NumberAxis animated="false" side="LEFT" />
               </yAxis>
             </LineChart>
          </top>
          <center>
-            <Button mnemonicParsing="false" onAction="#startBackpressure" text="Go!" BorderPane.alignment="CENTER" />
+            <Button mnemonicParsing="false" fx:id="startButton" onAction="#startBackpressure" text="Go!" BorderPane.alignment="CENTER" />
          </center>
          <left>
             <HBox alignment="CENTER_RIGHT" prefHeight="100.0" prefWidth="200.0" spacing="10.0" BorderPane.alignment="CENTER">

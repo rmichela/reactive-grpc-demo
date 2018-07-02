@@ -7,10 +7,14 @@ option java_outer_classname = "NumbersProto";
 
 import "google/protobuf/empty.proto";
 
-service Chat {
-    rpc SendNumbers (stream Number) returns (google.protobuf.Empty) {}
+service BackpressureDemo {
+    rpc SendNumbers (HowMany) returns (stream Number) {}
+}
+
+message HowMany {
+    int32 number = 1;
 }
 
 message Number {
-    int64 number = 1;
+    repeated int32 number = 1;
 }
